@@ -1,0 +1,20 @@
+{
+  "name": "sync-pipes",
+  "version": "0.0.0",
+  "description": "WIP - nothing to see here",
+  "main": "index.js",
+  "dependencies": {
+    "napi-macros": "^2.2.2",
+    "node-gyp-build": "^4.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mafintosh/sync-pipes.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mafintosh/sync-pipes/issues"
+  },
+  "homepage": "https://github.com/mafintosh/sync-pipes"
+}
