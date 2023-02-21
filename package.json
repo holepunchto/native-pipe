@@ -1,20 +1,22 @@
 {
-  "name": "sync-pipes",
+  "name": "native-pipe",
   "version": "0.0.0",
-  "description": "WIP - nothing to see here",
+  "description": "Make a native pipe using node-api",
   "main": "index.js",
   "dependencies": {
     "napi-macros": "^2.2.2",
-    "node-gyp-build": "^4.6.0"
+    "node-gyp-build": "^4.6.0",
+    "streamx": "^2.13.2",
+    "uv-errors": "^1.0.4"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mafintosh/sync-pipes.git"
+    "url": "https://github.com/holepunchto/native-pipe.git"
   },
   "author": "Mathias Buus (@mafintosh)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mafintosh/sync-pipes/issues"
+    "url": "https://github.com/holepunchto/native-pipe/issues"
   },
-  "homepage": "https://github.com/mafintosh/sync-pipes"
+  "homepage": "https://github.com/holepunchto/native-pipe"
 }
