@@ -187,11 +187,14 @@ NAPI_METHOD(native_pipe_connect) {
   NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
 
-  int err;
   uv_connect_t *conn = &(self->conn);
 
   conn->data = self;
-  NAPI_UV_THROWS(err, uv_pipe_connect(conn, (uv_pipe_t *) self, path, on_connect))
+  uv_pipe_connect(conn, (uv_pipe_t *) self, path, on_connect);
+
+uv_os_fd_t _fd;
+uv_fileno((uv_handle_t *) self, &_fd);
+printf("fd is %i\n", _fd);
 
 #ifdef WIN32
   NAPI_RETURN_INT32(-1)
