@@ -44,6 +44,14 @@ test('sync', function (t) {
     server.listen(${JSON.stringify(path)}, () => console.log('ready'))
   `])
 
+  proc.stderr.on('data', function (data) {
+    process.stderr.write(data)
+  })
+
+  proc.on('exit', function (code) {
+    console.log('proc existed', code)
+  })
+
   proc.stdout.once('data', function (data) {
     console.log('data:', data.toString())
 
