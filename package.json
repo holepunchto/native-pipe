@@ -3,11 +3,17 @@
   "version": "0.0.0",
   "description": "Pipes that only depend on n-api",
   "main": "index.js",
+  "scripts": {
+    "test": "brittle test.js"
+  },
   "dependencies": {
     "napi-macros": "^2.2.2",
     "node-gyp-build": "^4.6.0",
     "streamx": "^2.13.2",
     "uv-errors": "^1.0.4"
+  },
+  "devDependencies": {
+    "brittle": "^3.2.1"
   },
   "repository": {
     "type": "git",
