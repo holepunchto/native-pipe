@@ -195,7 +195,7 @@ NAPI_METHOD(native_pipe_connect) {
 {
 uv_os_fd_t _fd;
 int err = uv_fileno((uv_handle_t *) self, &_fd);
-printf("fd=%i err=%i\n", _fd, err);
+printf("fd=%i err=%i %s %s\n", _fd, err, uv_err_name(err), uv_strerror(err));
 }
 
 #ifdef WIN32
