@@ -207,9 +207,10 @@ NAPI_METHOD(native_pipe_read_sync) {
   NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
   NAPI_ARGV_BUFFER(buf, 1)
 
-  uv_os_fd_t fd;
-  uv_fileno((uv_handle_t *) self, &fd);
   int err;
+  uv_os_fd_t fd;
+
+  NAPI_UV_THROWS(err, uv_fileno((uv_handle_t *) self, &fd));
 
   if (self->blocking == 0) {
     self->blocking = 1;
@@ -238,9 +239,10 @@ NAPI_METHOD(native_pipe_write_sync) {
   NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
   NAPI_ARGV_BUFFER(buf, 1)
 
-  uv_os_fd_t fd;
-  uv_fileno((uv_handle_t *) self, &fd);
   int err;
+  uv_os_fd_t fd;
+
+  NAPI_UV_THROWS(err, uv_fileno((uv_handle_t *) self, &fd));
 
   if (self->blocking == 0) {
     self->blocking = 1;
