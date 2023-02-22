@@ -62,8 +62,8 @@ test('sync', function (t) {
 })
 
 function pipeName () {
-  const name = (Math.random().toString(16) + Math.random().toString(16)).slice(2)
+  const name = 'native-pipe-' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2)
   return process.platform === 'win32'
-    ? '\\\\pipe\\.\\' + name
+    ? '\\\\.\\pipe\\' + name
     : '/tmp/' + name + '.sock'
 }
