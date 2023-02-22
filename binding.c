@@ -241,9 +241,9 @@ NAPI_METHOD(native_pipe_write_sync) {
 
   int err;
   uv_os_fd_t fd;
-
+printf("prewrite\n");
   NAPI_UV_THROWS(err, uv_fileno((uv_handle_t *) self, &fd));
-
+printf("postwrite fd=%i\n", fd);
   if (self->blocking == 0) {
     self->blocking = 1;
     uv_stream_set_blocking((uv_stream_t *) self, 1);
@@ -251,7 +251,7 @@ NAPI_METHOD(native_pipe_write_sync) {
 
 #ifdef WIN32
   DWORD bytes;
-
+printf("write file\n");
   if (!WriteFile(fd, buf, buf_len, &bytes, NULL)) {
     NAPI_UV_THROWS(err, uv_translate_sys_error(GetLastError()))
   }
