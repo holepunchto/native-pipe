@@ -44,7 +44,9 @@ test('sync', function (t) {
     server.listen(${JSON.stringify(path)}, () => console.log('ready'))
   `])
 
-  proc.stdout.once('data', function () {
+  proc.stdout.once('data', function (data) {
+    console.log('data:', data.toString())
+
     const stream = new NativePipe(path)
 
     stream.writeSync('hello world')
