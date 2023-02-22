@@ -49,7 +49,7 @@ module.exports = class NativePipe extends Duplex {
 
   writeSync (buf) {
     if (!this._allowSync) throw new Error('Sync writes must happen before the stream opens')
-    return binding.native_pipe_write_sync(this._handle, buf)
+    return binding.native_pipe_write_sync(this._handle, mapWritable(buf))
   }
 
   _open (cb) {
