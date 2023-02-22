@@ -1,7 +1,7 @@
 {
   "name": "native-pipe",
   "version": "0.0.0",
-  "description": "Make a native pipe using node-api",
+  "description": "Pipes that only depend on n-api",
   "main": "index.js",
   "dependencies": {
     "napi-macros": "^2.2.2",
