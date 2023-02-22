@@ -3,11 +3,16 @@
 #include <uv.h>
 #include <stdlib.h>
 
+#ifndef WIN32
+#include <unistd.h>
+#endif
+
 typedef struct {
   uv_pipe_t pipe;
   uv_connect_t conn;
   uv_buf_t read_buf;
   uv_shutdown_t end;
+  int blocking;
   napi_env env;
   napi_ref ctx;
   napi_ref on_connect;
@@ -21,6 +26,11 @@ static void
 on_connect (uv_connect_t *req, int status) {
   native_pipe_t *self = (native_pipe_t *) req->data;
   napi_env env = self->env;
+
+  if (self->blocking == 1) {
+    self->blocking = 0;
+    uv_stream_set_blocking((uv_stream_t *) self, 0);
+  }
 
   napi_handle_scope scope;
   napi_open_handle_scope(env, &scope);
@@ -157,6 +167,7 @@ NAPI_METHOD(native_pipe_init) {
 
   self->read_buf.base = read_buf;
   self->read_buf.len = read_buf_len;
+  self->blocking = 0;
 
   napi_create_reference(env, argv[2], 1, &(self->ctx));
   napi_create_reference(env, argv[3], 1, &(self->on_connect));
@@ -191,6 +202,68 @@ NAPI_METHOD(native_pipe_connect) {
 #endif
 }
 
+NAPI_METHOD(native_pipe_read_sync) {
+  NAPI_ARGV(2)
+  NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
+  NAPI_ARGV_BUFFER(buf, 1)
+
+  uv_os_fd_t fd;
+  uv_fileno((uv_handle_t *) self, &fd);
+  int err;
+
+  if (self->blocking == 0) {
+    self->blocking = 1;
+    uv_stream_set_blocking((uv_stream_t *) self, 1);
+  }
+
+#ifdef WIN32
+  DWORD bytes;
+
+  if (!ReadFile(fd, buf, buf_len, &bytes, NULL)) {
+    NAPI_UV_THROWS(err, uv_translate_sys_error(GetLastError()))
+  }
+#else
+  ssize_t bytes = read(fd, buf, buf_len);
+
+  if (bytes < 0) {
+    NAPI_UV_THROWS(err, uv_translate_sys_error(errno))
+  }
+#endif
+
+  NAPI_RETURN_INT32(bytes);
+}
+
+NAPI_METHOD(native_pipe_write_sync) {
+  NAPI_ARGV(2)
+  NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
+  NAPI_ARGV_BUFFER(buf, 1)
+
+  uv_os_fd_t fd;
+  uv_fileno((uv_handle_t *) self, &fd);
+  int err;
+
+  if (self->blocking == 0) {
+    self->blocking = 1;
+    uv_stream_set_blocking((uv_stream_t *) self, 1);
+  }
+
+#ifdef WIN32
+  DWORD bytes;
+
+  if (!WriteFile(fd, buf, buf_len, &bytes, NULL)) {
+    NAPI_UV_THROWS(err, uv_translate_sys_error(GetLastError()))
+  }
+#else
+  ssize_t bytes = write(fd, buf, buf_len);
+
+  if (bytes < 0) {
+    NAPI_UV_THROWS(err, uv_translate_sys_error(errno))
+  }
+#endif
+
+  NAPI_RETURN_INT32(bytes);
+}
+
 NAPI_METHOD(native_pipe_open) {
   NAPI_ARGV(2)
 
@@ -223,9 +296,14 @@ NAPI_METHOD(native_pipe_writev) {
   }
 
   req->data = handle;
-  uv_write(req, handle, bufs, nbufs, on_write);
 
+  int err = uv_write(req, handle, bufs, nbufs, on_write);
   free(bufs);
+
+  if (err < 0) {
+    napi_throw_error(env, uv_err_name(err), uv_strerror(err));
+    return NULL;
+  }
 
   return NULL;
 }
@@ -235,9 +313,10 @@ NAPI_METHOD(native_pipe_end) {
   NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
 
   uv_shutdown_t *req = &(self->end);
+  int err;
 
   req->data = self;
-  uv_shutdown(req, (uv_stream_t *) self, on_shutdown);
+  NAPI_UV_THROWS(err, uv_shutdown(req, (uv_stream_t *) self, on_shutdown))
 
   return NULL;
 }
@@ -269,52 +348,6 @@ NAPI_METHOD(native_pipe_close) {
   return NULL;
 }
 
-// NAPI_METHOD(pipe_init) {
-//   NAPI_ARGV(1)
-
-//   uv_loop_t *loop;
-//   napi_get_uv_event_loop(env, &loop);
-
-//   NAPI_ARGV_BUFFER_CAST(uv_pipe_t *, handle, 0);
-
-//   uv_pipe_init(loop, handle, 0);
-
-//   return NULL;
-// }
-
-// NAPI_METHOD(pipe_open) {
-//   NAPI_ARGV(2)
-
-//   NAPI_ARGV_BUFFER_CAST(uv_pipe_t *, handle, 0);
-//   NAPI_ARGV_INT32(fd, 1);
-
-//   uv_pipe_open(handle, fd);
-
-//   return NULL;
-// }
-
-// NAPI_METHOD(pipe_write) {
-//   NAPI_ARGV(3)
-
-//   NAPI_ARGV_BUFFER_CAST(uv_write_t *, req, 0);
-//   NAPI_ARGV_BUFFER_CAST(uv_stream_t *, handle, 1);
-//   NAPI_ARGV_BUFFER(buf, 2);
-
-//   uv_buf_t bufs = {
-//     .base = buf,
-//     .len = buf_len
-//   };
-
-//   uv_write(req, handle, &bufs, 1, on_write);
-
-//   return NULL;
-// }
-// NAPI_METHOD(pipe_bind) {
-//   NAPI_ARGV(4)
-
-//   uv_pipe_connect(req, p, name, on_connect)
-// }
-
 NAPI_INIT() {
   NAPI_EXPORT_SIZEOF(native_pipe_t);
   NAPI_EXPORT_SIZEOF(uv_write_t)
@@ -322,6 +355,8 @@ NAPI_INIT() {
   NAPI_EXPORT_FUNCTION(native_pipe_init)
   NAPI_EXPORT_FUNCTION(native_pipe_connect)
   NAPI_EXPORT_FUNCTION(native_pipe_writev)
+  NAPI_EXPORT_FUNCTION(native_pipe_read_sync)
+  NAPI_EXPORT_FUNCTION(native_pipe_write_sync)
   NAPI_EXPORT_FUNCTION(native_pipe_end)
   NAPI_EXPORT_FUNCTION(native_pipe_resume)
   NAPI_EXPORT_FUNCTION(native_pipe_pause)

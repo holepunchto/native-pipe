@@ -21,6 +21,7 @@ module.exports = class NativePipe extends Duplex {
     this._finalCallback = null
     this._destroyCallback = null
 
+    this._allowSync = true
     this._connected = 0 // unknown
     this._allowHalfOpen = allowHalfOpen
 
@@ -41,7 +42,18 @@ module.exports = class NativePipe extends Duplex {
     }
   }
 
+  readSync (buf) {
+    if (!this._allowSync) throw new Error('Sync reads must happen before the stream opens')
+    return binding.native_pipe_read_sync(this._handle, buf)
+  }
+
+  writeSync (buf) {
+    if (!this._allowSync) throw new Error('Sync writes must happen before the stream opens')
+    return binding.native_pipe_write_sync(this._handle, buf)
+  }
+
   _open (cb) {
+    this._allowSync = false
     this._openCallback = cb
     this._continueOpen()
   }
