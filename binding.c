@@ -192,9 +192,11 @@ NAPI_METHOD(native_pipe_connect) {
   conn->data = self;
   uv_pipe_connect(conn, (uv_pipe_t *) self, path, on_connect);
 
+{
 uv_os_fd_t _fd;
-uv_fileno((uv_handle_t *) self, &_fd);
-printf("fd is %i\n", _fd);
+int err = uv_fileno((uv_handle_t *) self, &_fd);
+printf("fd=%i err=%i\n", _fd, err);
+}
 
 #ifdef WIN32
   NAPI_RETURN_INT32(-1)
