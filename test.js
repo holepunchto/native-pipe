@@ -1,6 +1,5 @@
 const test = require('brittle')
 const net = require('net')
-const { spawn } = require('child_process')
 const NativePipe = require('./')
 
 test('basic', function (t) {
@@ -14,7 +13,7 @@ test('basic', function (t) {
 
   server.listen(path, function () {
     const stream = new NativePipe(path)
-    let b = []
+    const b = []
 
     stream.write('hello')
     stream.write('world')
