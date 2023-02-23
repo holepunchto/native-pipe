@@ -3,16 +3,11 @@
 #include <uv.h>
 #include <stdlib.h>
 
-#ifndef WIN32
-#include <unistd.h>
-#endif
-
 typedef struct {
   uv_pipe_t pipe;
   uv_connect_t conn;
   uv_buf_t read_buf;
   uv_shutdown_t end;
-  int blocking;
   napi_env env;
   napi_ref ctx;
   napi_ref on_connect;
@@ -26,11 +21,6 @@ static void
 on_connect (uv_connect_t *req, int status) {
   native_pipe_t *self = (native_pipe_t *) req->data;
   napi_env env = self->env;
-
-  if (self->blocking == 1) {
-    self->blocking = 0;
-    uv_stream_set_blocking((uv_stream_t *) self, 0);
-  }
 
   napi_handle_scope scope;
   napi_open_handle_scope(env, &scope);
@@ -167,7 +157,6 @@ NAPI_METHOD(native_pipe_init) {
 
   self->read_buf.base = read_buf;
   self->read_buf.len = read_buf_len;
-  self->blocking = 0;
 
   napi_create_reference(env, argv[2], 1, &(self->ctx));
   napi_create_reference(env, argv[3], 1, &(self->on_connect));
@@ -192,78 +181,7 @@ NAPI_METHOD(native_pipe_connect) {
   conn->data = self;
   uv_pipe_connect(conn, (uv_pipe_t *) self, path, on_connect);
 
-#ifdef WIN32
-  NAPI_RETURN_INT32(-1)
-#else
-  uv_os_fd_t fd;
-  uv_fileno((uv_handle_t *) self, &fd);
-
-  NAPI_RETURN_INT32(fd);
-#endif
-}
-
-NAPI_METHOD(native_pipe_read_sync) {
-  NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
-  NAPI_ARGV_BUFFER(buf, 1)
-
-  int err;
-  uv_os_fd_t fd;
-
-  NAPI_UV_THROWS(err, uv_fileno((uv_handle_t *) self, &fd));
-
-  if (self->blocking == 0) {
-    self->blocking = 1;
-    uv_stream_set_blocking((uv_stream_t *) self, 1);
-  }
-
-#ifdef WIN32
-  DWORD bytes;
-
-  if (!ReadFile(fd, buf, buf_len, &bytes, NULL)) {
-    NAPI_UV_THROWS(err, uv_translate_sys_error(GetLastError()))
-  }
-#else
-  ssize_t bytes = read(fd, buf, buf_len);
-
-  if (bytes < 0) {
-    NAPI_UV_THROWS(err, uv_translate_sys_error(errno))
-  }
-#endif
-
-  NAPI_RETURN_INT32(bytes);
-}
-
-NAPI_METHOD(native_pipe_write_sync) {
-  NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(native_pipe_t *, self, 0)
-  NAPI_ARGV_BUFFER(buf, 1)
-
-  int err;
-  uv_os_fd_t fd;
-
-  NAPI_UV_THROWS(err, uv_fileno((uv_handle_t *) self, &fd));
-
-  if (self->blocking == 0) {
-    self->blocking = 1;
-    uv_stream_set_blocking((uv_stream_t *) self, 1);
-  }
-
-#ifdef WIN32
-  DWORD bytes;
-
-  if (!WriteFile(fd, buf, buf_len, &bytes, NULL)) {
-    NAPI_UV_THROWS(err, uv_translate_sys_error(GetLastError()))
-  }
-#else
-  ssize_t bytes = write(fd, buf, buf_len);
-
-  if (bytes < 0) {
-    NAPI_UV_THROWS(err, uv_translate_sys_error(errno))
-  }
-#endif
-
-  NAPI_RETURN_INT32(bytes);
+  return NULL;
 }
 
 NAPI_METHOD(native_pipe_open) {
@@ -357,8 +275,6 @@ NAPI_INIT() {
   NAPI_EXPORT_FUNCTION(native_pipe_init)
   NAPI_EXPORT_FUNCTION(native_pipe_connect)
   NAPI_EXPORT_FUNCTION(native_pipe_writev)
-  NAPI_EXPORT_FUNCTION(native_pipe_read_sync)
-  NAPI_EXPORT_FUNCTION(native_pipe_write_sync)
   NAPI_EXPORT_FUNCTION(native_pipe_end)
   NAPI_EXPORT_FUNCTION(native_pipe_resume)
   NAPI_EXPORT_FUNCTION(native_pipe_pause)

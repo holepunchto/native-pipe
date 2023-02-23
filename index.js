@@ -8,8 +8,6 @@ module.exports = class NativePipe extends Duplex {
   constructor (path, { readBufferSize = DEFAULT_READ_BUFFER, allowHalfOpen = true } = {}) {
     super({ mapWritable })
 
-    this.fd = -1
-
     const slab = Buffer.alloc(binding.sizeof_native_pipe_t + binding.sizeof_uv_write_t + readBufferSize)
 
     this._handle = slab.subarray(0, binding.sizeof_native_pipe_t)
@@ -21,7 +19,6 @@ module.exports = class NativePipe extends Duplex {
     this._finalCallback = null
     this._destroyCallback = null
 
-    this._allowSync = true
     this._connected = 0 // unknown
     this._allowHalfOpen = allowHalfOpen
 
@@ -35,25 +32,12 @@ module.exports = class NativePipe extends Duplex {
 
     if (typeof path === 'number') {
       binding.native_pipe_open(this._handle, path)
-      this._connected = 1
-      this.fd = path
     } else {
-      this.fd = binding.native_pipe_connect(this._handle, path)
+      binding.native_pipe_connect(this._handle, path)
     }
   }
 
-  readSync (buf) {
-    if (!this._allowSync) throw new Error('Sync reads must happen before the stream opens')
-    return binding.native_pipe_read_sync(this._handle, buf)
-  }
-
-  writeSync (buf) {
-    if (!this._allowSync) throw new Error('Sync writes must happen before the stream opens')
-    return binding.native_pipe_write_sync(this._handle, mapWritable(buf))
-  }
-
   _open (cb) {
-    this._allowSync = false
     this._openCallback = cb
     this._continueOpen()
   }

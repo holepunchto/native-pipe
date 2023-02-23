@@ -31,36 +31,6 @@ test('basic', function (t) {
   })
 })
 
-test('sync', function (t) {
-  t.plan(4)
-
-  const path = pipeName()
-
-  const proc = spawn(process.execPath, ['-e', `
-    const server = net.createServer(function (sock) {
-      sock.pipe(sock)
-    })
-
-    server.listen(${JSON.stringify(path)}, () => console.log('ready'))
-  `])
-
-  proc.stdout.once('data', function () {
-    const stream = new NativePipe(path)
-
-    stream.writeSync('hello world')
-    const small = Buffer.alloc(1)
-    const big = Buffer.alloc(4096)
-
-    t.is(stream.readSync(small), 1)
-    t.alike(small.subarray(0, 1), Buffer.from('h'))
-
-    t.is(stream.readSync(big), 10)
-    t.alike(big.subarray(0, 10), Buffer.from('ello world'))
-
-    proc.kill()
-  })
-})
-
 function pipeName () {
   const name = 'native-pipe-' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2)
   return process.platform === 'win32'
