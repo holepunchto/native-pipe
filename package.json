@@ -1,6 +1,6 @@
 {
   "name": "native-pipe",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Pipes that only depend on n-api",
   "main": "index.js",
   "scripts": {
