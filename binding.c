@@ -136,6 +136,13 @@ on_close (uv_handle_t *handle) {
   }
 
   napi_close_handle_scope(env, scope);
+
+  napi_delete_reference(env, self->on_connect);
+  napi_delete_reference(env, self->on_write);
+  napi_delete_reference(env, self->on_end);
+  napi_delete_reference(env, self->on_read);
+  napi_delete_reference(env, self->on_close);
+  napi_delete_reference(env, self->ctx);
 }
 
 static void
@@ -274,6 +281,7 @@ NAPI_INIT() {
 
   NAPI_EXPORT_FUNCTION(native_pipe_init)
   NAPI_EXPORT_FUNCTION(native_pipe_connect)
+  NAPI_EXPORT_FUNCTION(native_pipe_open)
   NAPI_EXPORT_FUNCTION(native_pipe_writev)
   NAPI_EXPORT_FUNCTION(native_pipe_end)
   NAPI_EXPORT_FUNCTION(native_pipe_resume)
