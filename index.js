@@ -19,7 +19,7 @@ module.exports = class NativePipe extends Duplex {
     this._finalCallback = null
     this._destroyCallback = null
 
-    this._connected = 0 // unknown
+    this._connected = typeof path === 'number' ? 1 : 0 // unknown
     this._allowHalfOpen = allowHalfOpen
 
     binding.native_pipe_init(this._handle, this._buffer, this,
