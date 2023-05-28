@@ -35,4 +35,4 @@ Pipe servers.
 
 ## License
 
-MIT
+Apache-2.0
